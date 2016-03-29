@@ -2,7 +2,7 @@
 
 ![Certificate](https://raw.githubusercontent.com/justinstephen/Udacity-Projects/master/Certificate.PNG)
 
-### About
+### About:
 These are my projects for Udacity's [Data Analyst Nanodegree](https://www.udacity.com/course/data-analyst-nanodegree--nd002).
 
 ### Courses:
