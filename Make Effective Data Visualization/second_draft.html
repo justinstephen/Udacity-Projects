@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.1.6.min.js"></script>
+  <!--Style code for body--> 
+  <style>
+    body {
+      margin-left: 100px;
+      margin-top: 20px;
+      margin-right: 100px;
+      font-family: Verdana, Geneva, sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>How a baseball player's size affects home runs</h1>
+  <p>
+    For this project I decided to use a dataset of baseball players that includes the players' weight, height, handedness, and home run totals. I thought it would be interesting to look at the effect a player's size had on the amount of home runs that player
+    hit. The points are color coded based on the handedness of the player; right, left, or both (switch hitter). The weight is indicated in pounds while the height is measured in inches.
+  </p>
+  <h3>Weight and Home Runs</h3>
+  <p>This first section is the players' weight plotted out against their home run totals. Where I had initially thought that a players weight would have a large impact on the amount of home runs a player hit, there appears to be only a very very small correlation,
+    if any at all.</p>
+  <div id="weightChart"> </div>
+  <h3>Height and Home Runs</h3>
+  <p>I decided to explore height next, but it also seemed to have very little effect on the amount of home runs hit by a player.</p>
+  <div id="heightChart"></div>
+  <h3>Average and Home Runs</h3>
+  <p>As an added bonus I decided to explore if a baseball players average had any correlation to their home run totals. It appears there is a small amout of correlation, although it is important to note that batting average is a rate stat while home runs are a counting stat.
+         Because of this, a player who played very little may have an extremely high average with a low home run total.</p>
+  <div id="avgChart"></div>
+
+
+  <script type="text/javascript">
+    //Initialize the SVGs
+    var w_svg = dimple.newSvg("#weightChart", 790, 400);
+    var h_svg = dimple.newSvg("#heightChart", 790, 400);
+    var a_svg = dimple.newSvg("#avgChart", 790, 400);
+
+    d3.csv("baseball_data.csv", function(data) {
+      //WEIGHT CHART 
+      //Create weight chart
+      var wChart = new dimple.chart(w_svg, data);
+      wChart.setBounds(60, 30, 700, 330);
+
+      //Create the axis and set minimum values
+      var w_xAxis = wChart.addMeasureAxis("x", "weight");
+      w_xAxis.overrideMin = 130;
+      var w_yAxis = wChart.addMeasureAxis("y", "HR");
+
+      //Create legend
+      wChart.addSeries(["name", "handedness"], dimple.plot.bubble);
+      wChart.addLegend(200, 10, 560, 20, "right");
+
+      //Draw chart
+      wChart.draw();
+
+      //HEIGHT CHART
+      //Create height chart 
+      var hChart = new dimple.chart(h_svg, data);
+      hChart.setBounds(60, 30, 700, 330);
+
+      //Create the axis and set minimum values
+      var h_xAxis = hChart.addMeasureAxis("x", "height");
+      h_xAxis.overrideMin = 64;
+      var h_yAxis = hChart.addMeasureAxis("y", "HR");
+
+      //Create legend
+      hChart.addSeries(["name", "handedness"], dimple.plot.bubble);
+      hChart.addLegend(200, 10, 560, 20, "right");
+
+      //Draw chart 
+      hChart.draw();
+
+      //AVERAGE CHART 
+      //Create average chart 
+      var aChart = new dimple.chart(a_svg, data);
+      aChart.setBounds(60, 30, 700, 330);
+      
+      //Create the axis and set minimum values
+      var a_xAxis = aChart.addMeasureAxis("x", "avg");
+      var a_yAxis = aChart.addMeasureAxis("y", "HR");
+      
+      //Create legend
+      aChart.addSeries(["name", "handedness"], dimple.plot.bubble);
+      aChart.addLegend(200, 10, 560, 20, "right");
+      
+      //Draw chart
+      aChart.draw();
+    });
+  </script>
+
+</body>
+
+</html>

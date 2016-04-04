@@ -1,0 +1,577 @@
+---
+output: html_document
+---
+2012 Presidential Campaign Donations
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(scales)
+library(GGally)
+setwd("F:/Election Project")
+```
+
+```{r echo=FALSE, Load_the_Data}
+donations <- read.csv("P00000001-CA.csv")
+
+```
+
+```{r echo=FALSE, Add_Variables}
+canidates <- levels(donations$cand_nm)
+canidates.dem <- canidates[7]
+canidates.rep <- canidates[!(canidates %in% canidates.dem)]
+canidates.f <- canidates[c(1, 14)]
+canidates.m <- canidates[!(canidates %in% canidates.f)]
+
+#Adding gender and party variables
+donations$canidate_gender <- factor(donations$cand_nm %in% canidates.m, 
+                                    labels = c("F", "M"))
+donations$party <- factor(donations$cand_nm %in% canidates.rep, 
+                          labels = c("Democrat", "Republican"))
+```
+
+To start, I wanted to add a couple more variables to the dataset. I've added the gender of each canidate, as well as the party affilition.
+
+```{r echo=FALSE, Univariate_Plots}
+dim(donations)
+str(donations)
+levels(donations$cand_nm)
+summary(donations)
+
+#Filtering out donations below 0 as they are refunds
+donations <- donations[donations$contb_receipt_amt > 0,]
+dim(donations)
+summary(donations)
+```
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+The structure of the dataset is a semi-transactional data showing each of the donations received for the 2012 presidential campaign. Overall there are 954,661 transactions in the dataset for 14 different candiates.
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main feature of this dataset is the donations, both the size and the quantity. I'll be interested in looking at this broken down by candiate, party, gender, profession, and location. I'll also be looking at what party and canidates were donated to broken down by area and profession. 
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+
+I have not yet added any features to the dataset, but may as I dig in.
+
+### Did you create any new variables from existing variables in the dataset?
+
+I added the gender of each canidate as well as the party. This should provide some interesting insight.
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+The contribution amount has an extremely long tail, with donations all the way up to $30,000, but a median of $50. The other thing that was surprising were the amount of "charged back" and "refunded" donations. For the sake of analyzing the size of contributions, I decided to omit these negative values and only focus on initial contributions. This reduced about 10,000 transactions and moved the mean contribution up to $193.54.
+
+# Univariate Plots Section
+```{r echo=FALSE, Donation_Frequency}
+ggplot(aes(contb_receipt_amt), data = donations) +
+  geom_bar(binwidth = 5) +
+  xlim(c(0,100))
+```
+
+Looking at the distribution of the donations, we can see that $100 donations are by far the most frequent, and just like we saw from using the summary() command, that the bulk of the donations are between $25-$100. Most people seem to prefer nice whole numbers while making donations.
+
+```{r echo=FALSE, Donations_Per_Canidate}
+ggplot(aes(cand_nm), data = donations) +
+  geom_bar() +
+  scale_y_continuous() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Just counting the donations from each canidate, you can see that Barack Obama received significantly more donations than the top Republican canidate, and that the top Republican canidate received significantly more donations than the next. 
+
+```{r echo=FALSE, Donations_Per_Party}
+#Summarizing donations from each party
+total.donations <- summarize(group_by(donations, party), count = length(contb_receipt_amt))
+p1 <- ggplot(aes(x = party, y = count), data = total.donations) +
+  geom_bar(stat = "identity")
+p1
+```
+
+And here, grouping up all the Democratic and Republican contributions, we can see that there are over three times the amount of Democratic contributions as Republican.
+
+```{r echo=FALSE, Donations_Amount_Per_Party}
+#Summing up the donation broken down by party
+sum.donations <- summarize(group_by(donations, party), sum = sum(contb_receipt_amt))
+p2 <- ggplot(aes(x = party, y = sum), data = sum.donations) +
+  geom_bar(stat = "identity")
+grid.arrange(p1, p2, ncol = 2)
+```
+
+This is where things get interesting. Even though there are over three times the amount of Democratic contributions, the sum of those contributions is only 4 million dollars less, only about 5% less than the Democratic donations. When we look at the donation amount divided by the amount of the donations, we see that Republican canidates got $391.88 a donations, where the Democratic canidate only recieved $130.57 per donation. Let's go back to the first plot of donation distribution and break it down by party.
+
+```{r echo=FALSE, Donation_Dist_Compare}
+p3 <- ggplot(aes(contb_receipt_amt), data = subset(donations, 
+                                                   party == "Democrat")) +
+  geom_bar(binwidth = 50) +
+  xlim(c(0,3000))
+
+p4 <- ggplot(aes(contb_receipt_amt), data = subset(donations, 
+                                                   party == "Republican")) +
+  geom_bar(binwidth = 50) +
+  xlim(c(0,3000))
+
+grid.arrange(p3, p4, nrow = 2)
+```
+
+Here we've expanded the x-axis out to 3,000 as there are quite are many more Republican donations in the higher range. Where we have almost all of the Democratic donations bunched up less than $100, we can see significant spikes in donations of $1000 and $2500 for Republican canidates.
+
+```{r echo=FALSE, Donations_By_Gender}
+#Summarizing donation data grouped by gender
+gender_data <- donations %>%
+  group_by(canidate_gender) %>% 
+  summarize(count = n(),
+            median = median(contb_receipt_amt),
+            mean = mean(contb_receipt_amt))
+
+gender_data
+```
+
+Here, I've separated the donations made to the male canidates and the female canidates. Although the median is higher for female canidates, the mean is very similar. Unfortunately when dividing the data up like this it's hard to look at the data made to female canidates as the sample size is so small (only 2,000 donations made to female canidates).
+
+```{r echo=FALSE, Donations_By_Gender_Plots}
+donations.m <- ggplot(aes(contb_receipt_amt), 
+                      data = subset(donations, canidate_gender == "M")) +
+  geom_bar(binwidth = 50) +
+  xlim(c(0,3000)) +
+  ggtitle("Donations to Male Canidates")
+
+donations.f <- ggplot(aes(contb_receipt_amt), 
+                      data = subset(donations, canidate_gender == "F")) +
+  geom_bar(binwidth = 50) +
+  xlim(c(0,3000)) +
+  ggtitle("Donations to Female Canidates")
+
+
+grid.arrange(donations.m, donations.f, nrow = 2)
+```
+
+And here is the distribution for contributes made to each gender. Again, the distributions are slightly different, but with the sample size so small, it would be difficult to draw conclusions about contribution patterns for each canidate gender.
+
+# Bivariate Plots Section
+
+```{r echo=FALSE, Donation_Per_Party_Boxplot}
+ggplot(aes(party, log10(contb_receipt_amt)), data = donations) +
+  geom_boxplot(aes(fill = donations$party)) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  ggtitle("Log10")
+```
+
+Next I decided to look at the donation amount per party. You can see the mean of donations to the Republican party is significantly greater than those made too the Democratic party, although there is a cluster of donations made that are much greater than the mean.
+
+```{r echo=FALSE, Donation_Per_Cand_Boxplot}
+ggplot(aes(cand_nm, log10(contb_receipt_amt)), data = donations) +
+  geom_boxplot(aes(fill = donations$party)) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 1))
+```
+
+And here we can look at the donation amount per canidate. Almost every Republican canidate has a higher average donation amount than the only Democratic canidate, but the donations to Obama have a much higher variance due to the higher amount of donations.
+
+```{r echo=FALSE, Occupation_Formatting}
+#Summarizing donation data grouped by occupation
+occupation_data <- donations %>%
+  group_by(contbr_occupation) %>% 
+  summarize(n = n(),
+            median = median(contb_receipt_amt),
+            mean = mean(contb_receipt_amt),
+            max = max(contb_receipt_amt)) %>%
+  filter(n > 100)
+
+occupation_data$percentage <- occupation_data$n / sum(occupation_data$n) * 100
+
+occupation_data[with(occupation_data, order(-n)), ][1:20, ]
+```
+
+At this point I wanted to look at the occupation of the donators. I summarized the contribution amount, grouped by occupation, and filtered out all occupations that appeared less than 100 times. I've also added a field that indicates the percentage that the occupation takes up of all donators. Here is a list of the top 20 occupations that appear in the dataset. We have many donations from retired people. They make up about 29% of all contributions.
+
+```{r echo=FALSE, Top_Occupation_By_Party}
+#Summarizing donation data by grouped occupation and party
+occupation_data_by_party <- donations %>%
+  group_by(contbr_occupation, party) %>% 
+  summarize(n = n(),
+            median = median(contb_receipt_amt),
+            mean = mean(contb_receipt_amt),
+            max = max(contb_receipt_amt)) %>%
+  filter(n > 100)
+
+
+d_occupations <- subset(occupation_data_by_party, party == "Democrat" & 
+                          !(contbr_occupation %in% c("INFORMATION REQUESTED", 
+                                                     "INFORMATION REQUESTED PER BEST EFFORTS", 
+                                                     "NONE")))
+r_occupations <- subset(occupation_data_by_party, party == "Republican" &
+                          !(contbr_occupation %in% c("INFORMATION REQUESTED", 
+                                                     "INFORMATION REQUESTED PER BEST EFFORTS", 
+                                                     "NONE")))
+
+top_d_occ <- d_occupations[with(d_occupations, order(-n)), ][1:10, ]
+top_r_occ <- r_occupations[with(r_occupations, order(-n)), ][1:10, ]
+```
+
+Next I decided to filter out the top 10 occupations with the highest amount of donations for each canidate. I filtered out some of the categories as well as they were not actual occupations, but indicated people who had not responded.
+
+```{r echo=FALSE, Occupation_By_Party_Bar_Charts}
+top_d_plot <- ggplot(data = top_d_occ, aes(contbr_occupation, n)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+top_r_plot <- ggplot(data = top_r_occ, aes(contbr_occupation, n)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+
+grid.arrange(top_d_plot, top_r_plot, ncol = 2)
+```
+
+Here I've plotted out these donations and you can definitely see the overlap between the two parties. They both include Attorney, Consultants, Engineers, Homemakers, Physicians, and Retired people while Writers, Teachers, Professors and Unemployed prefered the Democractic party.
+
+```{r echo=FALSE, Top_Occupations_Facet}
+#Filtering out the top 20 count
+top20_occ <- occupation_data[with(occupation_data, order(-n)), ][1:20, ]
+occupation_data_by_party[with(occupation_data_by_party, order(-n)), ][1:20, ]
+
+ggplot(data = subset(occupation_data_by_party, 
+                     contbr_occupation %in% top20_occ$contbr_occupation),
+       aes(contbr_occupation, n, fill = party)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  coord_flip()
+```
+
+When I first generated this graph I was tempted to filter out certain factors of the occupation variable such as "Not Employed", "Information Requested Per Best Efforts", and "Not Employed" because they weren't relevant to what I had been looking at, but I thought it was interested how these factors were unique to their respective parties. However the data was gathered, there must have been different options for each of the parties in how they were collecting the data.
+
+```{r echo=FALSE, No_Retired}
+#Filtering out the top 30 count
+top30_occ <- occupation_data[with(occupation_data, order(-n)), ][1:30, ]
+
+ggplot(data = subset(occupation_data_by_party, 
+                     contbr_occupation %in% top30_occ$contbr_occupation &
+                       !(contbr_occupation %in% c('RETIRED', 
+                                                  "INFORMATION REQUESTED PER BEST EFFORTS", 
+                                                  "NONE", "NOT EMPLOYED", 
+                                                  "INFORMATION REQUESTED"))),
+       aes(contbr_occupation, n, fill = party)) +
+  geom_bar(stat="identity", position = "fill") +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  coord_flip()
+
+```
+
+I've filtered out the retired canidates, as well as some of the other designations that were party specific to get a better look at the breakdown of each occupation and who they contributed for. I've also expanded out the canidates so we can take a look at a few more. It's interesting to see how some occupations heavily favor a party (such as writers, psychologists, and artists).
+
+```{r echo=FALSE, Occupation_Mean_vs_Count}
+#Filtering out not relevant factors 
+od_mean_count <- subset(occupation_data_by_party, 
+                        !(contbr_occupation %in% c('RETIRED', 
+                                                   "INFORMATION REQUESTED PER BEST EFFORTS", 
+                                                  "NONE", "NOT EMPLOYED", 
+                                                  "INFORMATION REQUESTED")))
+
+ggplot(data = od_mean_count, aes(n, mean)) +
+  geom_point() +
+  facet_wrap(~party) +
+  scale_fill_manual(values=c("#000099", "#990000"))
+```
+
+I've broken down the data here to plot out the mean donation amount plotted against the amount of donations. We can see what we've confirmed earlier in the analysis. The democratic party relies on many smaller donations, while the republican party relies on fewer, larger donations.
+
+```{r echo=FALSE, Clean_and_label_Occupation_Data}
+#Filtering out blank occupations as well as not relevant occupation factors 
+#Adding new fields for employment status and then summarizing based on those fields
+employment_status <- subset(donations, !is.na(contbr_occupation))
+unemployed_terms <- c("UNEMPLOYED","NOT EMPLOYED")
+
+employment_status$status <- "EMPLOYED"
+employment_status[employment_status$contbr_occupation %in% unemployed_terms, ][, "status"] <- "UNEMPLOYED"
+employment_status[employment_status$contbr_occupation == "RETIRED", ][, "status"] <- "RETIRED"
+
+employment_data <- employment_status %>%
+  group_by(status) %>% 
+  summarize(n = n(),
+            median = median(contb_receipt_amt),
+            mean = mean(contb_receipt_amt),
+            max = max(contb_receipt_amt))
+
+employment_data
+```
+
+Next I decided to add a new variable to the dataset: "status" that indicated if the person making the donation was either "employed", "retired", or "unemployed". The dataset had already indicated those who were unemployed and retired, I simply subsetted out those who had not responded or were NA and labeled the rest as employed. Looking at the median of the dataset we see the same trend of a $50 donation. In the median we see a slight decrease from "employed" to "retired", and another small decrease from "retired" to "unemployed". This seems to make sense as those who are employed would be most likely to have the most money, while those who are unemployed the least to donate to a campaign.
+
+```{r echo=FALSE, Employment_Data_Graphs, fig.width=10}
+employment_data.mean <- ggplot(aes(x = status, y = mean), data = employment_data) +
+  geom_bar(stat = "identity") +
+  ylim(c(0,210)) +
+  ylab("Mean Donation in Dollars") +
+  ggtitle("Mean Donation by Employment Status")
+
+employment_data.median <- ggplot(aes(x = status, y = median), data = employment_data) +
+  geom_bar(stat = "identity") +
+  ylim(c(0,210)) +
+  ylab("Median Donation in Dollars") +
+  ggtitle("Median Donation by Employment Status")
+
+
+grid.arrange(employment_data.mean, employment_data.median, ncol = 2)
+```
+
+Here I've plotted out the differences between the different employment statuses, and again, there are not many surprises while looking at the data.
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset? 
+Comparing donation amounts broken down by party was extremely interesting. The democractic party relies on many small donations while the Republican party receives few, but large donations, even per canidate.
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+Most of the features investigated here did not provided any meaningful insights. Many of the features behave exactly as one would expect.
+
+### What was the strongest relationship you found?
+The strongest relationship I've found so far is employment status. Those who are employed make bigger donations than those who are retired, and especially those who are unemployed. 
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, Employment_Data_Graphs2, fig.width=10}
+#Summarizing the new status data based on party
+employment_data_by_party <- employment_status %>%
+  group_by(status, party) %>% 
+  summarize(n = n(),
+            median = median(contb_receipt_amt),
+            mean = mean(contb_receipt_amt),
+            max = max(contb_receipt_amt))
+
+employment_data2.mean <- ggplot(aes(x = status, y = mean, fill = party), 
+                                data = employment_data_by_party) +
+  geom_bar(stat = "identity") +
+  ylim(c(0,600)) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  ylab("Mean Donation in Dollars") +
+  ggtitle("Mean Donation by Employment Status") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+employment_data2.median <- ggplot(aes(x = status, y = median, fill = party), 
+                                  data = employment_data_by_party) +
+  geom_bar(stat = "identity") +
+  ylim(c(0,600)) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  ylab("Median Donation in Dollars") +
+  ggtitle("Median Donation by Employment Status") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+grid.arrange(employment_data2.mean, employment_data2.median, ncol = 2)
+```
+
+This is similar to a chart we looked at earlier, but now I've divided the bar by party. We can see the similar trend from before, that donations made to Republican canidates are significantly larger than those made to Democratic canidates. The only interesting thing when looking at the mean, is how much closer the donation amounts are between "employed" and "retired" donators in the Democratic party. We can see a drop off in the median donation of those "unemployed".
+
+```{r echo=FALSE, Total_Donations_By_Party, fig.width=7}
+ggplot(aes(x = status, y = log10(n), fill = party), 
+       data = employment_data_by_party) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~party) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  ylab("Count of Donations (log10)") +
+  ggtitle("Total Donations by Employment Status")
+```
+
+Here I've compared the amount of donations made to each party, broken down by employment status. The distributions are extremely similar, although there is a steeper drop off for Republican donations from unemployed donators compared to Democractic.
+
+```{r echo=FALSE, County_Map_Data}
+library(maps)
+
+#Reading in the data for California and breaking it down by county
+all_counties <- map_data("county")
+ca_counties <- all_counties[all_counties$region == "california",]
+ca_counties$subregion <- toupper(ca_counties$subregion)
+
+#Reading in the zip code file and cleaning up the data to be joined with the map data
+counties <- read.csv("F:/Election Project/ZIP_CODES.txt", header = FALSE)
+colnames(counties) <- c("Zip Code", "Latitude", "Longitude", 
+                        "City", "State", "County", "Zip Class")
+counties <- counties[counties$State == "CA",]
+counties <- unique(counties[,c(4, 6)])
+
+#Merging the map data with the donations data
+add.county <- merge(donations, counties, by.x = "contbr_city", 
+                    by.y = "City", all.x = TRUE)
+```
+
+I next decided to plot out the donations on a map of California, and take a look at where the largest donations, and the highest average donations were coming from.
+
+```{r echo=FALSE, Donation_By_County}
+#Summarizing donation data by county
+donation_by_county <- add.county %>%
+  group_by(County) %>% 
+  summarize(n = n(),
+            sum = sum(contb_receipt_amt),
+            mean = mean(contb_receipt_amt),
+            median = median(contb_receipt_amt),
+            max = max(contb_receipt_amt))
+
+#Merging the summarized data with the map data
+map <- merge(ca_counties, donation_by_county, by.x = "subregion", 
+             by.y= "County", all.x=TRUE)
+map <- arrange(map, order)
+```
+
+I added county data to the dataset using a city/county dataset I obtained from data.gov. This allowed me to assign a county to each of the cities found in the donations dataset, and then group up all donations by county.
+
+```{r echo=FALSE, Map_Data, fig.width=10, fig.height=10}
+map.mean <- ggplot(data = map, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = cut(mean, 10), group = group)) +
+  geom_path(aes(group = group), colour = 'gray', linestyle = 2) + 
+  coord_map() +
+  scale_fill_brewer(palette  = 'GnBu')
+
+map.median <- ggplot(data = map, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = cut(median, 10), group = group)) +
+  geom_path(aes(group = group), colour = 'gray', linestyle = 2) + 
+  coord_map() +
+  scale_fill_brewer(palette  = 'GnBu')
+
+map.sum <- ggplot(data = map, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = cut(sum, 10), group = group)) +
+  geom_path(aes(group = group), colour = 'gray', linestyle = 2) + 
+  coord_map() +
+  scale_fill_brewer(palette  = 'GnBu')
+
+map.max<- ggplot(data = map, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = cut(max, 5), group = group)) +
+  geom_path(aes(group = group), colour = 'gray', linestyle = 2) + 
+  coord_map() +
+  scale_fill_brewer(palette  = 'GnBu')
+
+grid.arrange(map.mean, map.median, map.sum, map.max, ncol = 2, nrow = 2)
+```
+
+Here I've plotted out the median, mean, max, and total of donations made in each county. The map of the sum of the donations shows us what we already know, that the areas with the highest total of donations are large metropolotin areas such as Los Angeles and San Francisco. The max donations also come from these same areas. The difference between the mean and median plots are a little more interesting because they show the differences in how these donations come in from each county. The mean shows a trend of higher than average donations coming from central California, while the median shows higher medians from a handful of more inland counties.
+
+```{r echo=FALSE, Party_By_County}
+#Summarizing the donation data based on county and party
+party_by_county <- add.county %>%
+  group_by(County, party) %>% 
+  summarize(n = n(),
+            sum = sum(contb_receipt_amt),
+            mean = mean(contb_receipt_amt),
+            median = median(contb_receipt_amt),
+            max = max(contb_receipt_amt))
+
+#Merging the summarized data with the map data
+party_map <- merge(ca_counties, party_by_county, by.x = "subregion", 
+                   by.y= "County", all.x=TRUE)
+party_map <- arrange(party_map, order)
+
+ggplot(data = party_map, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = party, group = group)) +
+  geom_path(aes(group = group), colour = 'gray', linestyle = 2) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  coord_map()
+
+```
+
+Here I've plotted out the party that each county has a higher number of donations to.
+
+```{r echo=FALSE, Median_Map_By_Party}
+ggplot(data = party_map, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = mean, group = group)) +
+  geom_path(aes(group = group), colour = 'gray', linestyle = 2) + 
+  facet_wrap(~party) +
+  coord_map()
+```
+
+Here I've compared the mean donation amount for each county and split it up by party. Donations to Democratic canidates are spread fairly evenly throughout the country, while those made to Republican canidates have a much higher mean in the higher populated areas, such as San Francisco and Los Angeles.
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+Breaking down the mean and median donations by party and employment status definitely showed some slight differences in the patterns in donation size from each party. It also helped highlight the difference in donation sizes from party to party.
+
+### Were there any interesting or surprising interactions between features?
+The most interesting feature from this section of the analysis is the effect employment status has on the donation size. Although it varies by donations to each party, there is a very clear drop off from employed, to retired, to unemployed.
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+No model was created.
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+
+```{r echo=FALSE, fig.height=6, fig.width=6, Plot_one}
+party.count <- ggplot(aes(x = party, y = count, fill = party), 
+                      data = total.donations) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  theme(legend.position="none") +
+  xlab("") +
+  ylab("Total Donations Made")
+party.sum <- ggplot(aes(x = party, y = sum, fill = party), 
+                    data = sum.donations) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values=c("#000099", "#990000")) +
+  theme(legend.position="none") +
+  xlab("") +
+  ylab("Sum of Donations Made")
+
+
+grid.arrange(party.count, party.sum, ncol = 2) 
+```
+
+### Description One
+
+This was the first interesting thing I came across in the dataset. I've plotted out the comparison between how many donation were made to each political party on the left, and then compared that to distribution of the sum of the donations on the right. Even though there were roughly 500,000 more donations made to the Democractic canidate, the Republicans raised nearly as much funding. This may to do with the amount of republican canidates, and each of them running their own campaigns and requesting contributions. Either way, it's very interesting that donations made to the Republican party almost match those of the Democratic party despire having only about a quarter of donations made. This indicates that the donations made to the Republican party are much larger than those made to the Democractic. We'll see more of this in the next chart.
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+top_2_count <- od_mean_count[with(od_mean_count, order(-n)), ][1:2, ]
+top_2_mean <- od_mean_count[with(od_mean_count, order(-mean)), ][1:2, ]
+
+ggplot(data = od_mean_count, aes(n, mean, color = party), alpha = .5) +
+  geom_point(size = 3, alpha = .5) +
+  geom_text(data = top_2_count, aes(x = n, y = mean, 
+                                    label = contbr_occupation, 
+                                    hjust=-.1, vjust=-.1), size = 3) +
+  geom_text(data = top_2_mean, aes(x = n, y = mean, 
+                                   label = contbr_occupation, 
+                                   hjust=-.1, vjust=-.1), size = 3) +
+  xlab("Amount of Donations") +
+  ylab("Mean Donation Amount") +
+  xlim(0, 30000) +
+  scale_color_manual(values=c("#000099", "#FF0000"))
+```
+
+### Description Two
+
+Here I've grouped together the average donation size for each occupation, and plotted them with the average donation per occupation, and the mean of each donation by occupation. We can see a similar trend to what we saw earlier, that the Repulican canidates make up the bulk of their donations with large contributions, while the Democratic party relies on many smaller donations. We can look at the largest donators to the Republican party, Chairmen and Venture Capitalists, and the occupations that donated the most, Attorneys and Teachers. 
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+cnames <- aggregate(cbind(long, lat) ~ subregion, data=ca_counties, 
+                    FUN=function(x)mean(range(x)))
+
+top_counties <- donation_by_county[with(donation_by_county, 
+                                        order(-mean)), ][1:11, ]
+top.cnames <- subset(cnames, subregion %in% top_counties$County)
+
+ggplot(data = map, aes(x = long, y = lat)) +
+  geom_polygon(aes(fill = cut(mean, 10), group = group)) +
+  geom_text(data = top.cnames, aes(x = long, y = lat, label = subregion), size = 4) +
+  geom_path(aes(group = group), colour = 'gray', linestyle = 2) + 
+  coord_map() +
+  scale_fill_brewer(palette  = 'GnBu', 
+                    guide = guide_legend(title = "Mean Donation Amount"))
+```
+
+### Description Three
+
+Here I've plotted out the mean donation amount made to all canidates and added the names of the 10 counties with the highest mean donation amount. There is a few distinct clusterings on the map. A large cluster exists in what is considered "Cental" California, another cluster in the San Franscisco Bay area, and another in the Northern part of the state. Many of these areas are considered wealthy areas such as Santa Barbara, Orange, and the San Francisco area so these don't come as much surprise. The central counties with a higher mean are surprising, and this is where I think it would be beneficial to add more data to the dataset such as average income per county and county population. Knowing from experience that these areas are lower population, and lower income, it wouldn't suprise me to see these area with fewer, but higher donations.
+
+# Reflection
+
+I found this data analysis project very insteresting and it provided severall insights that I wouldn't have suspected. The first surprised was the large discrepency between the amount of Democratic and Republican contributions. California is well known as a Democratic state, but I thought the ratio between party donations would be closer to 2:1 or 3:1 in favor of Democratic canidates. It was also interesting to see that female Republican canidates received very similar donations to the male canidates. There were not many surprises when looking at the occupation data; the fact that largest Republican donations were made by CEOs and Presidents of companies, while the Democratic party relied on more donations from occupations that have typically been aligned with the Democractic party, teachers and artists. I was surpised to see the large percentage of donations made by those who are retired. I was glad I added the employment status variable to the dataset, as it was interesting seeing the distributions between this factor between the two parties. I also feel the analysis benefited from the addition of the maps and seeing the patterns plotted out over the state, but feel like the analysis would have greatly benefited from adding income and population data to the counties. This would allow us to compare the averages and count of donations in each count and see if there was any meaningful relationship between county income or population. Overall this analysis taught me a lot of about graphing and organizing data. I especially had a tough time learning how to build the maps, but once I figured it out, it was quite easy to graph more. I had to go to an outside source to collect county data to map the cities to the county they belonged to, and rely on the maps package to construct a map of California with county lines. Again, if I were to go into this project more in depth I think I would bring in county data involving population per county as well as income information per county. This would allow me to look into more detail in what types of counties contributed more to what types of canidates.
