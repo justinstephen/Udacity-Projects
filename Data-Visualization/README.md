@@ -1,3 +1,5 @@
+You can view the fully rendered visualization here: http://htmlpreview.github.io/?https://github.com/justinstephen/Udacity-Projects/blob/master/Data-Visualization/index.html
+
 ## Summary:
 For this project I decided to use a dataset of baseball players that includes the players' weight, height, handedness, and home run totals. I thought it would be interesting to look at the effect a player's size had on the amount of home runs that player hit. The weight is indicated in pounds while the height is measured in inches. It appears as though weight has a positive relationship on the amount of home runs a player hits, while it is best to have an average height.
 
