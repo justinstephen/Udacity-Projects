@@ -47,5 +47,5 @@ I found the groupings around the 5s digit on weight pretty interesting as a psyc
 --Udacity Project Feedback--
 
 ## Resources:
-http://dimplejs.org/examples_viewer.html?id=scatter_standard 
-http://dimplejs.org/examples_viewer.html?id=bars_vertical
+* http://dimplejs.org/examples_viewer.html?id=scatter_standard 
+* http://dimplejs.org/examples_viewer.html?id=bars_vertical
