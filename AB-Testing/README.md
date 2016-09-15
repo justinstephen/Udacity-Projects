@@ -2,7 +2,7 @@
 
 ### Metric Choice
 
-##### Invariant Metrics
+**Invariant Metrics**
 * Number of cookies
 * Number of clicks
 * Click-through-probability
