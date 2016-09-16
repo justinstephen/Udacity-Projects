@@ -1,4 +1,4 @@
-# Intro to Machine Learning Final Project
+# Intro to Machine Learning - Final Project
 ## Enron Dataset
 This dataset consists of 146 employees of Enron and 21 features consisting of both financial and email information. 18 of these 146 employees have been identified as “Person of Interest” or a “POI”. Two of these “employees” were determined to be outliers and were eliminated for this analysis. One was the key “TOTAL” which is an artifact of an earlier dataset where all the columns were being summed. The other is “THE TRAVEL AGENCY IN THE PARK” as it was not a valid employee. I investigated how many missing values there were in the dataset and came back with the follow results:
 ``` python
