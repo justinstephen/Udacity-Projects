@@ -41,35 +41,59 @@ While the Naïve Bayes model has a significantly higher recall, it was identifyi
 
 ## Features
 I decided to add two new features to the dataset, each a fraction of emails sent to or from that employee and a person of interest. I thought this would be a more interesting feature than just seeing how many emails were sent to POI’s and from POI’s, we would instead be able to look at what fraction of their total emails were made up with communication with POI’s. These features gave a slight boost to the precision and recall of the Decision Tree model.
-|   | Precision | Recall |
+
+|  | Precision | Recall |
 |:--- | ---:| ---:|
 | Before new features | .2395 | .2322 |
 | With new features | .2459 | .2475 |
+
 The fraction of emails sent to a POI proved to be an important feature in the final feature selection.
 Because I decided to use the Decision Tree model, I also used a built in function of that model to select features(feature_importances_). This function calculates the importance of each future as the normalized reduction of the weight of that feature on the model. I used a function that would create the Decision Tree model, weigh the features, and then trim any features that had scored a zero (not important). This function was run until the amount of features was reduced to only features that had importance greater than zero. The only features that remained where: 'total_payments', 'shared_receipt_with_poi', 'fraction_to_poi', 'exercised_stock_options', 'expenses', 'restricted_stock'.
+
 |    | Precision | Recall |
 |:--- | ---:| ---:|
 | All Features | .2459 | .2475 |
 | Reduced Features | .2459 | .2475 |
+
 This had an extremely large impact on the model with a much higher precision and recall.
+
 ## Algorithm Tuning
 Each algorithm uses a set of parameters that can have drastic results on the final result. It’s important to test each algorithm with a variety of parameters to ensure that you are getting the highest results possible. Thankfully, there are ways to automate this process to ensure you can test a large group of parameters programmatically. I tuned the algorithm using the Grid Search CV function, while weighting the scoring toward recall, since I wanted to model to favor identifying POIs. Using the Grid Search CV function is essential as it allows us to test many attributes to make sure that the model is properly tuned with the correct attributes. The parameter grid used for searching was determined by hand testing variables to get a good feel for an appropriate range. The parameters I used for testing were:
-```
+``` python
 'max_features': ['auto', 'sqrt', 'log2']
 ```
 Max features determines the amount of features to use when splitting. ‘auto’ and ‘sqrt’ will test by taking the max features as the square root of the features list of the data set. ‘log2’ will take the log2 of the list of features.
-```
+``` python
 'min_samples_split': [2, 3, 4, 5, 6, 7, 8, 9, 10]
 ```
 Miminimum samples split will decide how many samples of the feature need to be present for the tree
 to split based on this feature.
-```
+``` python
 'max_depth' : [None, 2, 4, 6, 8, 10]
 ```
 Max depth is the depth of the decision tree. This will determine how many splits the tree will make.
 The parameters returned by the search are:
+
 |   |   | 
 |:--- | ---:|
 |'max_features' | ‘sqrt’ |
 |'min_samples_split' | 3 |
 |'max_depth' | None |
+
+The entire set of parameters returned by the search is:
+``` python
+DecisionTreeClassifier(compute_importances=None, criterion='gini',
+ max_depth=None, max_features='sqrt', max_leaf_nodes=None,
+ min_density=None, min_samples_leaf=1, min_samples_split=3,
+ random_state=None, splitter='best')
+```
+
+After the algorithm tuning the model performed even better:
+
+|    | Precision | Recall |
+|:--- | ---:| ---:|
+| Before Tuning | .3620 | .3800 |
+| After Tuning | .3705 | .3873 |
+
+## Validation
+What we are looking for more than accuracy is a high precision and recall score. The precision identifies the number of true positives we’ve identified over the all positives. What this means is how many of the employees as a POI / non-POI correctly. Next we have the recall score is the number of true positives divided by true positives added to the false negatives. This is essentially how many employees were identified as a POI and actually are a POI. Because we would rather get all POIs while possibly incorrectly  flagging some innocent people as POIs, we prefer a higher recall. While the accuracy went slightly down, the precision and recall of the model both rose to .392 and .366. The model is now much better at identifying POIs from the selected features.
