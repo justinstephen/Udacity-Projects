@@ -17,7 +17,7 @@
 * **Number of clicks** is another metric that would be excellent as an invariant metric, as it should be the same across both groups.
 * **Click through probability** is also unaffected by the change we are making and should be the same across the control and experiment groups.
 * **Gross Conversion** is driving to the heart of what we would like to test here. This will help us explore the impact of our change by evaluating the amount of users who still complete checkout after completing the small quiz about how much time they have to dedicate to the course.
-* **Retention* was originally selected as an evaluation metric, but unfortunately this data would take far too long to collect for statistical significance, as the pool of users is so much smaller than the pool of page views.
+* **Retention** was originally selected as an evaluation metric, but unfortunately this data would take far too long to collect for statistical significance, as the pool of users is so much smaller than the pool of page views.
 * **Net conversion** was selected as our other evaluation metric as it gives us an accurate representation of those who complete the first 14 days and decide that they would like to continue taking the course.
 
 For **gross conversion** we will be looking for a decrease, and for **net conversion**, an increase.
