@@ -13,7 +13,7 @@
 
 **Metric Rationale:**
 * **Number of cookies** was selected as it is a very evenly distributed metric across both the control and experiment groups
-* **Number of user-ids** was not selected as an invariant metric as we would like to test this change on *new visitors*, who may or may not necessarily be assigned a user-id yet. This was not selected as an evaluation metric, as it did not capture the impact of the changes we were testing.
+* **Number of user-ids** was not selected as an invariant metric as we would like to test this change on *new visitors*, who may or may not necessarily be assigned a user-id yet. This was not selected as an evaluation metric, although it is being used in the evaluation metrics for gross conversion and net conversion.
 * **Number of clicks** is another metric that would be excellent as an invariant metric, as it should be the same across both groups.
 * **Click through probability** is also unaffected by the change we are making and should be the same across the control and experiment groups.
 * **Gross Conversion** is driving to the heart of what we would like to test here. This will help us explore the impact of our change by evaluating the amount of users who still complete checkout after completing the small quiz about how much time they have to dedicate to the course.
@@ -62,12 +62,24 @@ Each of the sanity checks passes. These will be appropriate invariant metrics ju
 | Net conversion|.6776|**No**|
 
 ### Summary
-I did not use the Bonferroni correction, and the results from the effect size test and sign test do not show discrepancies, although we can now see that net conversion was not impacted as we thought it might.
+I did not use the Bonferroni correction, as we require both of these metrics to show both significance, and not just one. The results from the effect size test and sign test do not show discrepancies, although we can now see that net conversion was not impacted as we thought it might.
 
 ## Recommendation
-Gross conversion was negatively impacted by the change as expected. Unfortunately net conversion was not impacted and we might want to rethink this design before releasing. By adding the quiz we are discouraging users from signing up if they do not have an appropriate amount of time, which will decrease the amount of users who sign up and are unhappy with the product. Without the increase in net conversion though, this change will sacrifice revenue for what is hopefully an uptick in user satisfaction. My recommendation is to explore other designs that outline the expectations and course material, but increase net conversion.
+Gross conversion was negatively impacted by the change as expected. Net conversion was not impacted as we had hoped. By adding the quiz we are discouraging users from signing up if they do not have an appropriate amount of time, which will decrease the amount of users who sign up and are unhappy with the product. Without a decrease in net conversion though, this is an acceptable change that will (at the very least), not decrease revenue. My recommendation is to explore other designs that outline the expectations and course material but increase net conversion.
 
 # Follow-Up Experiment
+## Experiment 1
+For a follow up experiment, I would like to test adding a pop-up for users who were seven days into the 14-day trial. This pop-up would offer a brief survey about how the course was going up to this point, and provide a link to offer feedback or help. This would at the very least provide feedback to Udacity about how the users feel seven days into the trial, and at the best, help people who had maybe stumbled or were unsure of their progress.
+
+My hypothesis would be that **retention** would increase after implemnting this poll for users in the middle of the 14-day trial.
+
+The unit of diversion would be by **user-id**, although it may be fair to offer this feature to all users and compare the metrics to past data.
+
+The invariant metric would be number of **user-ids**.
+
+The evaluation metric would be **retention** although we would also like to view the probability of people completing the survey. We could compare the satisfaction rating of the poll to the retention rate of those users. We would hopefully see a higher retention rate among all trial users, and hopefully gain valuable feedback about what specifically the user is having issues with (if anything at all).
+
+## Experiment 2
 For a follow up experiment, I would want to test expanding the 14-day trial into a 30-day trial. This would give the students more time to explore the material and get a feel for how long the courses might take. Nanodegrees have many courses and each course has its own material and challenges. This would allow them to fully explore all the courses and final projects as well as pace the material.
 
 My hypothesis would be that **Gross Conversion**, **Net Conversion**, and **Retention** would increase with the 30-day trial.
